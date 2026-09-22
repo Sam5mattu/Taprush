@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TapRush — Reaction Rush</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background: #080b16;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.container {
+  width: 100%;
+  max-width: 520px;
+  text-align: center;
+}
+
+.logo {
+  font-size: 42px;
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.logo span {
+  color: #7c5cff;
+}
+
+.subtitle {
+  color: #9da3b8;
+  margin-bottom: 25px;
+}
+
+.card {
+  background: #111625;
+  border: 1px solid #252c42;
+  border-radius: 24px;
+  padding: 22px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.35);
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  color: #aeb5c9;
+}
+
+.stat strong {
+  display: block;
+  color: white;
+  font-size: 20px;
+  margin-top: 4px;
+}
+
+#game {
+  height: 330px;
+  border-radius: 20px;
+  background: #191f32;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  transition: .15s;
+  font-size: 25px;
+  font-weight: bold;
+  border: 2px solid #292f45;
+}
+
+#game.waiting {
+  background: #241d2c;
+}
+
+#game.ready {
+  background: #18a56b;
+}
+
+.message {
+  font-size: 22px;
+}
+
+button {
+  margin-top: 20px;
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 14px;
+  background: #7c5cff;
+  color: white;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:active {
+  transform: scale(.98);
+}
+
+.best {
+  margin-top: 18px;
+  color: #8f96aa;
+}
+
+.best span {
+  color: white;
+  font-weight: bold;
+}
+
+@media (max-width: 500px) {
+  .logo {
+    font-size: 36px;
+  }
+
+  #game {
+    height: 300px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="logo">Tap<span>Rush</span></div>
+  <p class="subtitle">How fast are your reactions?</p>
+
+  <div class="card">
+
+    <div class="stats">
+      <div class="stat">
+        LAST
+        <strong id="last">—</strong>
+      </div>
+
+      <div class="stat">
+        BEST
+        <strong id="best">—</strong>
+      </div>
+    </div>
+
+    <div id="game">
+      <div class="message" id="message">
+        TAP TO START
+      </div>
+    </div>
+
+    <button id="startBtn">Start Game</button>
+
+    <div class="best">
+      Beat your best reaction time.
+    </div>
+
+  </div>
+</div>
+
+<script>
+
+const game = document.getElementById("game");
+const message = document.getElementById("message");
+const startBtn = document.getElementById("startBtn");
+const lastText = document.getElementById("last");
+const bestText = document.getElementById("best");
+
+let state = "idle";
+let startTime = 0;
+let timer = null;
+
+let best = localStorage.getItem("taprushBest");
+
+if (best) {
+  bestText.textContent = best + " ms";
+}
+
+function startGame() {
+
+  clearTimeout(timer);
+
+  state = "waiting";
+
+  game.className = "waiting";
+  message.textContent = "WAIT FOR GREEN...";
+  startBtn.textContent = "Waiting...";
+
+  const delay = Math.floor(Math.random() * 3000) + 2000;
+
+  timer = setTimeout(() => {
+
+    state = "ready";
+
+    game.className = "ready";
+    message.textContent = "TAP NOW!";
+
+    startTime = performance.now();
+
+  }, delay);
+}
+
+function tapGame() {
+
+  if (state === "idle") {
+    startGame();
+    return;
+  }
+
+  if (state === "waiting") {
+
+    clearTimeout(timer);
+
+    state = "idle";
+
+    game.className = "";
+    message.textContent = "TOO EARLY!";
+
+    startBtn.textContent = "Try Again";
+
+    return;
+  }
+
+  if (state === "ready") {
+
+    const reaction = Math.round(performance.now() - startTime);
+
+    lastText.textContent = reaction + " ms";
+
+    if (!best || reaction < Number(best)) {
+
+      best = reaction;
+
+      localStorage.setItem("taprushBest", best);
+
+      bestText.textContent = best + " ms";
+      message.textContent = reaction + " ms — NEW BEST!";
+
+    } else {
+
+      message.textContent = reaction + " ms";
+
+    }
+
+    state = "idle";
+
+    game.className = "";
+
+    startBtn.textContent = "Play Again";
+  }
+}
+
+game.addEventListener("click", tapGame);
+
+startBtn.addEventListener("click", startGame);
+
+</script>
+
+</body>
+</html>
